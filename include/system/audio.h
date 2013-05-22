@@ -47,7 +47,10 @@ typedef enum {
     AUDIO_STREAM_ENFORCED_AUDIBLE = 7, /* Sounds that cannot be muted by user and must be routed to speaker */
     AUDIO_STREAM_DTMF             = 8,
     AUDIO_STREAM_TTS              = 9,
-
+#ifdef QCOM_FM_ENABLED
+    AUDIO_STREAM_FM               = 10,
+#endif
+    
     AUDIO_STREAM_CNT,
     AUDIO_STREAM_MAX              = AUDIO_STREAM_CNT - 1,
 } audio_stream_type_t;
@@ -65,9 +68,13 @@ typedef enum {
     AUDIO_SOURCE_VOICE_RECOGNITION   = 6,
     AUDIO_SOURCE_VOICE_COMMUNICATION = 7,
     AUDIO_SOURCE_REMOTE_SUBMIX       = 8, /* Source for the mix to be presented remotely.      */
-                                          /* An example of remote presentation is Wifi Display */
-                                          /*  where a dongle attached to a TV can be used to   */
-                                          /*  play the mix captured by this audio source.      */
+    /* An example of remote presentation is Wifi Display */
+    /*  where a dongle attached to a TV can be used to   */
+    /*  play the mix captured by this audio source.      */
+#if defined(QCOM_FM_ENABLED) || defined(STE_FM)
+    AUDIO_SOURCE_FM_RX               = 9,
+    AUDIO_SOURCE_FM_RX_A2DP          = 10,
+#endif
     AUDIO_SOURCE_CNT,
     AUDIO_SOURCE_MAX                 = AUDIO_SOURCE_CNT - 1,
 } audio_source_t;
@@ -80,7 +87,7 @@ typedef enum {
      * (value must be less than 0)
      */
     AUDIO_SESSION_OUTPUT_STAGE = -1,
-
+    
     /* session for effects applied to output mix. These effects can
      * be moved by audio policy manager to another output stream
      * (value must be 0)
@@ -160,7 +167,7 @@ typedef enum {
 #endif
     AUDIO_FORMAT_MAIN_MASK           = 0xFF000000UL,
     AUDIO_FORMAT_SUB_MASK            = 0x00FFFFFFUL,
-
+    
     /* Aliases */
     AUDIO_FORMAT_PCM_16_BIT          = (AUDIO_FORMAT_PCM |
                                         AUDIO_FORMAT_PCM_SUB_16_BIT),
@@ -192,7 +199,7 @@ enum {
     AUDIO_CHANNEL_OUT_TOP_BACK_LEFT         = 0x8000,
     AUDIO_CHANNEL_OUT_TOP_BACK_CENTER       = 0x10000,
     AUDIO_CHANNEL_OUT_TOP_BACK_RIGHT        = 0x20000,
-
+    
     AUDIO_CHANNEL_OUT_MONO     = AUDIO_CHANNEL_OUT_FRONT_LEFT,
     AUDIO_CHANNEL_OUT_STEREO   = (AUDIO_CHANNEL_OUT_FRONT_LEFT |
                                   AUDIO_CHANNEL_OUT_FRONT_RIGHT),
@@ -255,7 +262,7 @@ enum {
                                   AUDIO_CHANNEL_OUT_TOP_BACK_LEFT|
                                   AUDIO_CHANNEL_OUT_TOP_BACK_CENTER|
                                   AUDIO_CHANNEL_OUT_TOP_BACK_RIGHT),
-
+    
     /* input channels */
     AUDIO_CHANNEL_IN_LEFT            = 0x4,
     AUDIO_CHANNEL_IN_RIGHT           = 0x8,
@@ -279,16 +286,16 @@ enum {
     AUDIO_CHANNEL_IN_BACK_LEFT       = 0x100000,
     AUDIO_CHANNEL_IN_BACK_RIGHT      = 0x200000,
 #endif
-
+    
     AUDIO_CHANNEL_IN_MONO   = AUDIO_CHANNEL_IN_FRONT,
     AUDIO_CHANNEL_IN_STEREO = (AUDIO_CHANNEL_IN_LEFT | AUDIO_CHANNEL_IN_RIGHT),
 #ifdef QCOM_HARDWARE
     AUDIO_CHANNEL_IN_5POINT1 = (AUDIO_CHANNEL_IN_FRONT_LEFT |
-                               AUDIO_CHANNEL_IN_FRONT_RIGHT |
-                               AUDIO_CHANNEL_IN_FRONT_CENTER |
-                               AUDIO_CHANNEL_IN_LOW_FREQUENCY |
-                               AUDIO_CHANNEL_IN_BACK_LEFT |
-                               AUDIO_CHANNEL_IN_BACK_RIGHT),
+                                AUDIO_CHANNEL_IN_FRONT_RIGHT |
+                                AUDIO_CHANNEL_IN_FRONT_CENTER |
+                                AUDIO_CHANNEL_IN_LOW_FREQUENCY |
+                                AUDIO_CHANNEL_IN_BACK_LEFT |
+                                AUDIO_CHANNEL_IN_BACK_RIGHT),
     AUDIO_CHANNEL_IN_VOICE_UPLINK_MONO = (AUDIO_CHANNEL_IN_VOICE_UPLINK | AUDIO_CHANNEL_IN_MONO),
     AUDIO_CHANNEL_IN_VOICE_DNLINK_MONO = (AUDIO_CHANNEL_IN_VOICE_DNLINK | AUDIO_CHANNEL_IN_MONO),
     AUDIO_CHANNEL_IN_VOICE_CALL_MONO   = (AUDIO_CHANNEL_IN_VOICE_UPLINK_MONO | AUDIO_CHANNEL_IN_VOICE_DNLINK_MONO),
@@ -321,7 +328,7 @@ typedef enum {
     AUDIO_MODE_RINGTONE         = 1,
     AUDIO_MODE_IN_CALL          = 2,
     AUDIO_MODE_IN_COMMUNICATION = 3,
-
+    
     AUDIO_MODE_CNT,
     AUDIO_MODE_MAX              = AUDIO_MODE_CNT - 1,
 } audio_mode_t;
@@ -338,7 +345,11 @@ typedef enum {
 enum {
     AUDIO_DEVICE_NONE                          = 0x0,
     /* reserved bits */
+#if defined(ICS_AUDIO_BLOB) || defined(MR0_AUDIO_BLOB)
+    AUDIO_DEVICE_BIT_IN                        = 0x10000,
+#else
     AUDIO_DEVICE_BIT_IN                        = 0x80000000,
+#endif
     AUDIO_DEVICE_BIT_DEFAULT                   = 0x40000000,
     /* output devices */
     AUDIO_DEVICE_OUT_EARPIECE                  = 0x1,
@@ -361,6 +372,8 @@ enum {
     AUDIO_DEVICE_OUT_ANC_HEADSET               = 0x10000,
     AUDIO_DEVICE_OUT_ANC_HEADPHONE             = 0x20000,
     AUDIO_DEVICE_OUT_PROXY                     = 0x40000,
+#endif
+#if defined(QCOM_FM_ENABLED) || defined(STE_FM)
     AUDIO_DEVICE_OUT_FM                        = 0x80000,
     AUDIO_DEVICE_OUT_FM_TX                     = 0x100000,
 #endif
@@ -385,6 +398,8 @@ enum {
                                  AUDIO_DEVICE_OUT_ANC_HEADSET |
                                  AUDIO_DEVICE_OUT_ANC_HEADPHONE |
                                  AUDIO_DEVICE_OUT_PROXY |
+#endif
+#if defined(QCOM_FM_ENABLED) || defined(STE_FM)
                                  AUDIO_DEVICE_OUT_FM |
                                  AUDIO_DEVICE_OUT_FM_TX |
 #endif
@@ -397,8 +412,24 @@ enum {
                                  AUDIO_DEVICE_OUT_BLUETOOTH_SCO_CARKIT),
     AUDIO_DEVICE_OUT_ALL_USB  = (AUDIO_DEVICE_OUT_USB_ACCESSORY |
                                  AUDIO_DEVICE_OUT_USB_DEVICE),
-
+    
     /* input devices */
+#if defined(ICS_AUDIO_BLOB) || defined(MR0_AUDIO_BLOB)
+    AUDIO_DEVICE_IN_COMMUNICATION         = AUDIO_DEVICE_BIT_IN * 0x1,
+    AUDIO_DEVICE_IN_AMBIENT               = AUDIO_DEVICE_BIT_IN * 0x2,
+    AUDIO_DEVICE_IN_BUILTIN_MIC           = AUDIO_DEVICE_BIT_IN * 0x4,
+    AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET = AUDIO_DEVICE_BIT_IN * 0x8,
+    AUDIO_DEVICE_IN_WIRED_HEADSET         = AUDIO_DEVICE_BIT_IN * 0x10,
+    AUDIO_DEVICE_IN_AUX_DIGITAL           = AUDIO_DEVICE_BIT_IN * 0x20,
+    AUDIO_DEVICE_IN_VOICE_CALL            = AUDIO_DEVICE_BIT_IN * 0x40,
+    AUDIO_DEVICE_IN_BACK_MIC              = AUDIO_DEVICE_BIT_IN * 0x80,
+    AUDIO_DEVICE_IN_REMOTE_SUBMIX         = AUDIO_DEVICE_BIT_IN * 0x100,
+    AUDIO_DEVICE_IN_ANLG_DOCK_HEADSET     = AUDIO_DEVICE_BIT_IN * 0x200,
+    AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET     = AUDIO_DEVICE_BIT_IN * 0x400,
+    AUDIO_DEVICE_IN_USB_ACCESSORY         = AUDIO_DEVICE_BIT_IN * 0x800,
+    AUDIO_DEVICE_IN_USB_DEVICE            = AUDIO_DEVICE_BIT_IN * 0x1000,
+    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_IN_BUILTIN_MIC,
+#else
     AUDIO_DEVICE_IN_COMMUNICATION         = AUDIO_DEVICE_BIT_IN | 0x1,
     AUDIO_DEVICE_IN_AMBIENT               = AUDIO_DEVICE_BIT_IN | 0x2,
     AUDIO_DEVICE_IN_BUILTIN_MIC           = AUDIO_DEVICE_BIT_IN | 0x4,
@@ -415,11 +446,14 @@ enum {
 #ifdef QCOM_HARDWARE
     AUDIO_DEVICE_IN_ANC_HEADSET           = AUDIO_DEVICE_BIT_IN | 0x2000,
     AUDIO_DEVICE_IN_PROXY                 = AUDIO_DEVICE_BIT_IN | 0x4000,
+#endif
+#if defined(QCOM_FM_ENABLED) || defined(STE_FM)
     AUDIO_DEVICE_IN_FM_RX                 = AUDIO_DEVICE_BIT_IN | 0x8000,
     AUDIO_DEVICE_IN_FM_RX_A2DP            = AUDIO_DEVICE_BIT_IN | 0x10000,
 #endif
     AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
-
+#endif
+    
     AUDIO_DEVICE_IN_ALL     = (AUDIO_DEVICE_IN_COMMUNICATION |
                                AUDIO_DEVICE_IN_AMBIENT |
                                AUDIO_DEVICE_IN_BUILTIN_MIC |
@@ -435,9 +469,11 @@ enum {
                                AUDIO_DEVICE_IN_USB_DEVICE |
 #ifdef QCOM_HARDWARE
                                AUDIO_DEVICE_IN_ANC_HEADSET |
+                               AUDIO_DEVICE_IN_PROXY |
+#endif
+#if defined(QCOM_FM_ENABLED) || defined(STE_FM)
                                AUDIO_DEVICE_IN_FM_RX |
                                AUDIO_DEVICE_IN_FM_RX_A2DP |
-                               AUDIO_DEVICE_IN_PROXY |
 #endif
                                AUDIO_DEVICE_IN_DEFAULT),
     AUDIO_DEVICE_IN_ALL_SCO = AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET,
@@ -457,216 +493,231 @@ typedef uint32_t audio_devices_t;
 typedef enum {
     AUDIO_OUTPUT_FLAG_NONE = 0x0,       // no attributes
     AUDIO_OUTPUT_FLAG_DIRECT = 0x1,     // this output directly connects a track
-                                        // to one output stream: no software mixer
+    // to one output stream: no software mixer
     AUDIO_OUTPUT_FLAG_PRIMARY = 0x2,    // this output is the primary output of
-                                        // the device. It is unique and must be
-                                        // present. It is opened by default and
-                                        // receives routing, audio mode and volume
-                                        // controls related to voice calls.
+    // the device. It is unique and must be
+    // present. It is opened by default and
+    // receives routing, audio mode and volume
+    // controls related to voice calls.
     AUDIO_OUTPUT_FLAG_FAST = 0x4,       // output supports "fast tracks",
-                                        // defined elsewhere
+    // defined elsewhere
     AUDIO_OUTPUT_FLAG_DEEP_BUFFER = 0x8,// use deep audio buffers
 #ifdef QCOM_HARDWARE
     //Qualcomm Flags
     AUDIO_OUTPUT_FLAG_LPA = 0x1000,      // use LPA
     AUDIO_OUTPUT_FLAG_TUNNEL = 0x2000,   // use Tunnel
     AUDIO_OUTPUT_FLAG_VOIP_RX = 0x4000   // use this flag in combination with DIRECT to
-                                         // indicate HAL to activate EC & NS
-                                         // path for VOIP calls
+    // indicate HAL to activate EC & NS
+    // path for VOIP calls
 #endif
 } audio_output_flags_t;
 
 static inline bool audio_is_output_device(audio_devices_t device)
 {
-    if (((device & AUDIO_DEVICE_BIT_IN) == 0) &&
+#ifdef ICS_AUDIO_BLOB
+    if ((popcount(device) == 1) && ((device & ~AUDIO_DEVICE_OUT_ALL) == 0))
+#else
+        if (((device & AUDIO_DEVICE_BIT_IN) == 0) &&
             (popcount(device) == 1) && ((device & ~AUDIO_DEVICE_OUT_ALL) == 0))
-        return true;
-    else
-        return false;
+#endif
+            return true;
+    
+        else
+            return false;
+    
 }
 
 static inline bool audio_is_input_device(audio_devices_t device)
 {
-    if ((device & AUDIO_DEVICE_BIT_IN) != 0) {
-        device &= ~AUDIO_DEVICE_BIT_IN;
-        if ((popcount(device) == 1) && ((device & ~AUDIO_DEVICE_IN_ALL) == 0))
-            return true;
-    }
-    return false;
-}
-
-static inline bool audio_is_output_devices(audio_devices_t device)
-{
-    return (device & AUDIO_DEVICE_BIT_IN) == 0;
-}
-
-
-static inline bool audio_is_a2dp_device(audio_devices_t device)
-{
-    if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_ALL_A2DP))
-        return true;
-    else
-        return false;
-}
-
-static inline bool audio_is_bluetooth_sco_device(audio_devices_t device)
-{
-    device &= ~AUDIO_DEVICE_BIT_IN;
-    if ((popcount(device) == 1) && (device & (AUDIO_DEVICE_OUT_ALL_SCO |
-                   AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET)))
-        return true;
-    else
-        return false;
-}
-
-static inline bool audio_is_usb_device(audio_devices_t device)
-{
-    if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_ALL_USB))
-        return true;
-    else
-        return false;
-}
-
-static inline bool audio_is_remote_submix_device(audio_devices_t device)
-{
-    if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_REMOTE_SUBMIX))
-        return true;
-    else
-        return false;
-}
-
-static inline bool audio_is_input_channel(uint32_t channel)
-{
-    if ((channel & ~AUDIO_CHANNEL_IN_ALL) == 0)
-        return true;
-    else
-        return false;
-}
-
-static inline bool audio_is_output_channel(uint32_t channel)
-{
-    if ((channel & ~AUDIO_CHANNEL_OUT_ALL) == 0)
-        return true;
-    else
-        return false;
-}
-
-/* Derive an output channel mask from a channel count.
- * This is to be used when the content channel mask is unknown. The 1, 2, 4, 5, 6, 7 and 8 channel
- * cases are mapped to the standard game/home-theater layouts, but note that 4 is mapped to quad,
- * and not stereo + FC + mono surround. A channel count of 3 is arbitrarily mapped to stereo + FC
- * for continuity with stereo.
- * Returns the matching channel mask, or 0 if the number of channels exceeds that of the
- * configurations for which a default channel mask is defined.
- */
-static inline audio_channel_mask_t audio_channel_out_mask_from_count(uint32_t channel_count)
-{
-    switch(channel_count) {
-    case 1:
-        return AUDIO_CHANNEL_OUT_MONO;
-    case 2:
-        return AUDIO_CHANNEL_OUT_STEREO;
-    case 3:
-        return (AUDIO_CHANNEL_OUT_STEREO | AUDIO_CHANNEL_OUT_FRONT_CENTER);
-    case 4: // 4.0
-        return AUDIO_CHANNEL_OUT_QUAD;
-    case 5: // 5.0
-        return (AUDIO_CHANNEL_OUT_QUAD | AUDIO_CHANNEL_OUT_FRONT_CENTER);
-    case 6: // 5.1
-        return AUDIO_CHANNEL_OUT_5POINT1;
-    case 7: // 6.1
-        return (AUDIO_CHANNEL_OUT_5POINT1 | AUDIO_CHANNEL_OUT_BACK_CENTER);
-    case 8:
-        return AUDIO_CHANNEL_OUT_7POINT1;
-    default:
-        return 0;
-    }
-}
-
-/* Similar to above, but for input.  Currently handles mono and stereo and 5.1 input. */
-static inline audio_channel_mask_t audio_channel_in_mask_from_count(uint32_t channel_count)
-{
-    switch (channel_count) {
-    case 1:
-        return AUDIO_CHANNEL_IN_MONO;
-    case 2:
-        return AUDIO_CHANNEL_IN_STEREO;
-#ifdef QCOM_HARDWARE
-    case 6:
-        return AUDIO_CHANNEL_IN_5POINT1;
+#ifdef ICS_AUDIO_BLOB
+    if ((popcount(device) == 1) && ((device & ~AUDIO_DEVICE_IN_ALL) == 0)) {
+#else
+        if ((device & AUDIO_DEVICE_BIT_IN) != 0) {
+            device &= ~AUDIO_DEVICE_BIT_IN;
+            if ((popcount(device) == 1) && ((device & ~AUDIO_DEVICE_IN_ALL) == 0))
 #endif
-    default:
-        return 0;
-    }
-}
-
-static inline bool audio_is_valid_format(audio_format_t format)
-{
-    switch (format & AUDIO_FORMAT_MAIN_MASK) {
-    case AUDIO_FORMAT_PCM:
-        if (format != AUDIO_FORMAT_PCM_16_BIT &&
-                format != AUDIO_FORMAT_PCM_8_BIT) {
-            return false;
+                return true;
         }
-    case AUDIO_FORMAT_MP3:
-    case AUDIO_FORMAT_AMR_NB:
-    case AUDIO_FORMAT_AMR_WB:
-    case AUDIO_FORMAT_AAC:
-    case AUDIO_FORMAT_HE_AAC_V1:
-    case AUDIO_FORMAT_HE_AAC_V2:
-    case AUDIO_FORMAT_VORBIS:
-#ifdef QCOM_HARDWARE
-    case AUDIO_FORMAT_QCELP:
-    case AUDIO_FORMAT_EVRC:
-    case AUDIO_FORMAT_EVRCB:
-    case AUDIO_FORMAT_EVRCWB:
-    case AUDIO_FORMAT_AC3:
-    case AUDIO_FORMAT_EAC3:
-    case AUDIO_FORMAT_AAC_ADIF:
-    case AUDIO_FORMAT_WMA:
-    case AUDIO_FORMAT_WMA_PRO:
-    case AUDIO_FORMAT_DTS:
-    case AUDIO_FORMAT_DTS_LBR:
-    case AUDIO_FORMAT_AMR_WB_PLUS:
-    case AUDIO_FORMAT_MP2:
-#endif
-        return true;
-    default:
         return false;
+        
     }
-}
-
-static inline bool audio_is_linear_pcm(audio_format_t format)
-{
-    return ((format & AUDIO_FORMAT_MAIN_MASK) == AUDIO_FORMAT_PCM);
-}
-
-static inline size_t audio_bytes_per_sample(audio_format_t format)
-{
-    size_t size = 0;
-
-    switch (format) {
-    case AUDIO_FORMAT_PCM_32_BIT:
-    case AUDIO_FORMAT_PCM_8_24_BIT:
-        size = sizeof(int32_t);
-        break;
-    case AUDIO_FORMAT_PCM_16_BIT:
-        size = sizeof(int16_t);
-        break;
-    case AUDIO_FORMAT_PCM_8_BIT:
-        size = sizeof(uint8_t);
-        break;
-#ifdef QCOM_HARDWARE
-    case AUDIO_FORMAT_AMR_WB:
-        size = 61;
-        break;
+    
+    static inline bool audio_is_output_devices(audio_devices_t device)
+    {
+#ifdef ICS_AUDIO_BLOB
+        return (device & ~AUDIO_DEVICE_OUT_ALL) == 0;
+#else
+        return (device & AUDIO_DEVICE_BIT_IN) == 0;
 #endif
-    default:
-        break;
     }
-    return size;
-}
-
-__END_DECLS
-
+    
+    
+    static inline bool audio_is_a2dp_device(audio_devices_t device)
+    {
+        if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_ALL_A2DP))
+            return true;
+        else
+            return false;
+    }
+    
+    static inline bool audio_is_bluetooth_sco_device(audio_devices_t device)
+    {
+        device &= ~AUDIO_DEVICE_BIT_IN;
+        if ((popcount(device) == 1) && (device & (AUDIO_DEVICE_OUT_ALL_SCO |
+                                                  AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET)))
+            return true;
+        else
+            return false;
+    }
+    
+    static inline bool audio_is_usb_device(audio_devices_t device)
+    {
+        if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_ALL_USB))
+            return true;
+        else
+            return false;
+    }
+    
+    static inline bool audio_is_remote_submix_device(audio_devices_t device)
+    {
+        if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_REMOTE_SUBMIX))
+            return true;
+        else
+            return false;
+    }
+    
+    static inline bool audio_is_input_channel(uint32_t channel)
+    {
+        if ((channel & ~AUDIO_CHANNEL_IN_ALL) == 0)
+            return true;
+        else
+            return false;
+    }
+    
+    static inline bool audio_is_output_channel(uint32_t channel)
+    {
+        if ((channel & ~AUDIO_CHANNEL_OUT_ALL) == 0)
+            return true;
+        else
+            return false;
+    }
+    
+    /* Derive an output channel mask from a channel count.
+     * This is to be used when the content channel mask is unknown. The 1, 2, 4, 5, 6, 7 and 8 channel
+     * cases are mapped to the standard game/home-theater layouts, but note that 4 is mapped to quad,
+     * and not stereo + FC + mono surround. A channel count of 3 is arbitrarily mapped to stereo + FC
+     * for continuity with stereo.
+     * Returns the matching channel mask, or 0 if the number of channels exceeds that of the
+     * configurations for which a default channel mask is defined.
+     */
+    static inline audio_channel_mask_t audio_channel_out_mask_from_count(uint32_t channel_count)
+    {
+        switch(channel_count) {
+            case 1:
+                return AUDIO_CHANNEL_OUT_MONO;
+            case 2:
+                return AUDIO_CHANNEL_OUT_STEREO;
+            case 3:
+                return (AUDIO_CHANNEL_OUT_STEREO | AUDIO_CHANNEL_OUT_FRONT_CENTER);
+            case 4: // 4.0
+                return AUDIO_CHANNEL_OUT_QUAD;
+            case 5: // 5.0
+                return (AUDIO_CHANNEL_OUT_QUAD | AUDIO_CHANNEL_OUT_FRONT_CENTER);
+            case 6: // 5.1
+                return AUDIO_CHANNEL_OUT_5POINT1;
+            case 7: // 6.1
+                return (AUDIO_CHANNEL_OUT_5POINT1 | AUDIO_CHANNEL_OUT_BACK_CENTER);
+            case 8:
+                return AUDIO_CHANNEL_OUT_7POINT1;
+            default:
+                return 0;
+        }
+    }
+    
+    /* Similar to above, but for input.  Currently handles mono and stereo and 5.1 input. */
+    static inline audio_channel_mask_t audio_channel_in_mask_from_count(uint32_t channel_count)
+    {
+        switch (channel_count) {
+            case 1:
+                return AUDIO_CHANNEL_IN_MONO;
+            case 2:
+                return AUDIO_CHANNEL_IN_STEREO;
+#ifdef QCOM_HARDWARE
+            case 6:
+                return AUDIO_CHANNEL_IN_5POINT1;
+#endif
+            default:
+                return 0;
+        }
+    }
+    
+    static inline bool audio_is_valid_format(audio_format_t format)
+    {
+        switch (format & AUDIO_FORMAT_MAIN_MASK) {
+            case AUDIO_FORMAT_PCM:
+                if (format != AUDIO_FORMAT_PCM_16_BIT &&
+                    format != AUDIO_FORMAT_PCM_8_BIT) {
+                    return false;
+                }
+            case AUDIO_FORMAT_MP3:
+            case AUDIO_FORMAT_AMR_NB:
+            case AUDIO_FORMAT_AMR_WB:
+            case AUDIO_FORMAT_AAC:
+            case AUDIO_FORMAT_HE_AAC_V1:
+            case AUDIO_FORMAT_HE_AAC_V2:
+            case AUDIO_FORMAT_VORBIS:
+#ifdef QCOM_HARDWARE
+            case AUDIO_FORMAT_QCELP:
+            case AUDIO_FORMAT_EVRC:
+            case AUDIO_FORMAT_EVRCB:
+            case AUDIO_FORMAT_EVRCWB:
+            case AUDIO_FORMAT_AC3:
+            case AUDIO_FORMAT_EAC3:
+            case AUDIO_FORMAT_AAC_ADIF:
+            case AUDIO_FORMAT_WMA:
+            case AUDIO_FORMAT_WMA_PRO:
+            case AUDIO_FORMAT_DTS:
+            case AUDIO_FORMAT_DTS_LBR:
+            case AUDIO_FORMAT_AMR_WB_PLUS:
+            case AUDIO_FORMAT_MP2:
+#endif
+                return true;
+            default:
+                return false;
+        }
+    }
+    
+    static inline bool audio_is_linear_pcm(audio_format_t format)
+    {
+        return ((format & AUDIO_FORMAT_MAIN_MASK) == AUDIO_FORMAT_PCM);
+    }
+    
+    static inline size_t audio_bytes_per_sample(audio_format_t format)
+    {
+        size_t size = 0;
+        
+        switch (format) {
+            case AUDIO_FORMAT_PCM_32_BIT:
+            case AUDIO_FORMAT_PCM_8_24_BIT:
+                size = sizeof(int32_t);
+                break;
+            case AUDIO_FORMAT_PCM_16_BIT:
+                size = sizeof(int16_t);
+                break;
+            case AUDIO_FORMAT_PCM_8_BIT:
+                size = sizeof(uint8_t);
+                break;
+#ifdef QCOM_HARDWARE
+            case AUDIO_FORMAT_AMR_WB:
+                size = 61;
+                break;
+#endif
+            default:
+                break;
+        }
+        return size;
+    }
+    
+    __END_DECLS
+    
 #endif  // ANDROID_AUDIO_CORE_H
